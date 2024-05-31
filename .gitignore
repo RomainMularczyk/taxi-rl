@@ -1,0 +1,13 @@
+# Misc
+.DS_Store
+
+# IDEs
+.vs_code/
+.idea/
+
+# Caches
+*__pycache__/
+*.ipynb_checkpoints/
+
+# PDFs
+*.pdf
