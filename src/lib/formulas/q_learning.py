@@ -1,4 +1,5 @@
 import numpy as np
+from lib.models.Policies import Policies
 from lib.models.Action import Action
 from lib.data.q_table import QTable
 
@@ -24,12 +25,14 @@ class QLearning:
         cutoff_score: int,
         observation_space: int,
         action_space: int,
+        policy: Policies,
         gamma: float = 1.0,
     ):
         self.initial_seed = initial_seed
         self.cutoff_score = cutoff_score
         self.gamma: float = gamma
-        self.qtable = QTable(observation_space, action_space)
+        self.data = QTable(observation_space, action_space)
+        self.policy = policy
 
     @classmethod
     def train(cls):
@@ -40,8 +43,7 @@ class QLearning:
             # 4. Update QTable => Bellman equations (QTable(a, s) => retrieve value)
             pass
 
-    @staticmethod
-    def expected_value(n: int, p: float) -> float:
+    def expected_value(self, n: int) -> float:
         """
         Compute the expected value.
 
@@ -49,15 +51,13 @@ class QLearning:
         ----------
         n: int
             Number of outcomes.
-        p: float
-            Probability of each outcome.
 
         Returns
         -------
         float
             The expected value.
         """
-        e = np.array([i * p for i in range(n + 1)])
+        e = np.array([i * self.policy.p for i in range(n + 1)])
         return e.sum()
 
     def q_function(self, state_index: int, action_index: int):
@@ -83,8 +83,10 @@ class QLearning:
             num_actions
         )
 
-    @classmethod
-    def bellman_equations(cls):
+    def bellman_equations(self):
+        return self.expected_value(
+            self.gamma * self.expected_value(self.q_function(state_index, action_index))
+        )
         q[state, action] = q[state, action] + learning_rate_a * (
                     reward + discount_factor_g * np.max(q[new_state, :]) - q[state, action]
                 )
