@@ -1,2 +1,2 @@
 class MonteCarloPolicy:
-    pass
+    p: float
