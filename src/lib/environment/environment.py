@@ -42,7 +42,7 @@ class GameEnvironment:
         self,
         previous_rewards: float,
         render: bool = False,
-        available_actions: bool = False
+        available_actions: bool = False,
     ) -> None:
         """
         Compute a game environment step.
