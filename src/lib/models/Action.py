@@ -63,7 +63,7 @@ class Action(Enum):
             A tuple of available actions at a given step.
         """
         actions = []
-        for index, action in enumerate(info["action_mask"]):
+        for index, action in enumerate(info.action_mask):
             if action == 1:
                 actions.append(list(Action)[index].name)
         return tuple(actions)
