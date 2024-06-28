@@ -3,18 +3,19 @@ from lib.models.Action import Action
 from lib.models.Node import Node
 
 
-
 class MonteCarloTree:
     """
-    Representation of a Tree. Each branch represent an action and each node represent the position on the map.
+    Representation of a Tree. Each branch represent an action and
+    each node represent the position on the map.
     """
 
     def __init__(self, actions: list[Action], depth: int):
         """
-        actions: [Action] 
+        actions: [Action]
             All the actions the agent can make.
         depth: int
-            The maximum allowed amount of steps the agent can make if it's the furthest from the pickup point.
+            The maximum allowed amount of steps the agent can make
+            if it's the furthest from the pickup point.
         """
         self.depth = depth
         self.actions = actions
@@ -43,7 +44,7 @@ class MonteCarloTree:
             The node we want to create with its children.
         max_depth: int
             The depth we want our Tree to be.
-        
+
         Returns
         -------
         Node
@@ -63,7 +64,6 @@ class MonteCarloTree:
             else:
                 root_node.children.append(child_node)
                 self._create_tree(
-                    child_node, 
+                    child_node,
                     max_depth=max_depth
                 )
-        
