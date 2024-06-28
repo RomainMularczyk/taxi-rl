@@ -1,10 +1,9 @@
-import logging
 from typing import Tuple
-from numpy import ndarray
-from pydantic import TypeAdapter, ValidationError
 from gymnasium.wrappers.time_limit import TimeLimit as GymnasiumGameEnvironment
 from lib.models.EnvironmentInfo import EnvironmentInfo
-from lib.models.Action import Action
+from lib.logs.logger import get_logger
+
+logger = get_logger()
 
 
 class GameEnvironment:
@@ -26,56 +25,17 @@ class GameEnvironment:
 
         # Init env with or without seed
         if seed:
-            state, _ = self.env.reset(seed=seed)
-            print(state)
+            state, info = self.env.env.reset(seed=seed)
         else:
-            state, _ = self.env.reset()
-            print(state)
+            state, info = self.env.env.reset()
+        self.state = state
+        self.info = EnvironmentInfo(**info)
 
     def render(self) -> None:
-        print(self.env.render())
-
-    def do_step(
-        self,
-        previous_rewards: float,
-        render: bool = False,
-        available_actions: bool = False,
-    ) -> None:
         """
-        Compute a game environment step.
-
-        Parameters
-        ----------
-        env: GameEnv
-            The game environment.
-        previous_rewards: int
-            The accumulation of all the rewards following a given trajectory.
-        render: bool, default=False
-            Defines if the step should be graphically rendered.
-        available_actions: bool, default=False
-            Defines if the available actions at a given step should be
-            displayed.
+        Display the game environment.
         """
-        action = self.env.action_space.sample()
-        observation, reward, terminated, truncated, info = self.env.step(
-            action
-        )
-        self.state = observation[0]
-        print(self.state)
-
-        if render:
-            print(self.env.render())
-        elif available_actions:
-            try:
-                TypeAdapter(EnvironmentInfo).validate_python(info)
-                print(Action.available_actions(info))  # type: ignore
-            except ValidationError:
-                logging.error(
-                    "The environment information does"
-                    "not have the expected format."
-                )
-        else:
-            self.reward += float(reward)
+        logger.info(self.env.render())
 
     def back_to(self, seed: int) -> None:
         """
