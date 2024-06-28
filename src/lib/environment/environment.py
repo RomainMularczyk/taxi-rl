@@ -5,7 +5,6 @@ from pydantic import TypeAdapter, ValidationError
 from gymnasium.wrappers.time_limit import TimeLimit as GymnasiumGameEnvironment
 from lib.models.EnvironmentInfo import EnvironmentInfo
 from lib.models.Action import Action
-from lib.models.Policies import Policies
 
 
 class GameEnvironment:
@@ -21,22 +20,20 @@ class GameEnvironment:
     def __init__(
         self,
         env: GymnasiumGameEnvironment,
-        reward: float,
-        policy: Policies,
-        q_table: ndarray,
         seed: int | None = None,
     ):
         self.env = env
-        self.reward = reward
-        self.policy = policy
 
+        # Init env with or without seed
         if seed:
-            self.env.reset(seed=seed)
+            state, _ = self.env.reset(seed=seed)
+            print(state)
         else:
-            self.env.reset()
+            state, _ = self.env.reset()
+            print(state)
 
-        if q_table:
-            self.q_table = q_table
+    def render(self) -> None:
+        print(self.env.render())
 
     def do_step(
         self,
