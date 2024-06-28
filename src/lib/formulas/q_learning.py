@@ -10,7 +10,7 @@ class QLearning:
 
     Attributes
     ----------
-    gamme: float, default=1.0
+    gamma: float, default=1.0
         The discount factor.
     initial_seed: int
         Initial seed to reset the environment in the same starting state
@@ -31,7 +31,7 @@ class QLearning:
         self.initial_seed = initial_seed
         self.cutoff_score = cutoff_score
         self.gamma: float = gamma
-        self.data = QTable(observation_space, action_space)
+        self.qtable = QTable(observation_space, action_space)
         self.policy = policy
 
     @classmethod
@@ -78,10 +78,7 @@ class QLearning:
             The expected value of the cumulated rewards.
         """
         num_actions = [action.value for action in list(Action)]
-        return self.expected_value(
-            self.qtable[state_index, action_index],
-            num_actions
-        )
+        return self.expected_value(len(num_actions))
 
     def bellman_equations(self):
         return self.expected_value(
