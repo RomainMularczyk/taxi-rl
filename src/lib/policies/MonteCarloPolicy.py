@@ -18,6 +18,7 @@ class MonteCarloPolicy:
     ):
         self.game_env = game_env
         self.tree = MonteCarloTree(actions, depth)
+        self.p = 1.0
 
     def train_pickup(self):
         # Initialiser le tableau de recherche BFS avec les enfants de '0' (root)
