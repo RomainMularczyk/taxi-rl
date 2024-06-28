@@ -2,7 +2,6 @@ from lib.models.Action import Action
 from lib.models.Node import Node
 from lib.models.EnvironmentInfo import EnvironmentInfo
 
-
 class MonteCarloTree:
     """
     Representation of a Tree. Each branch represent an action and
