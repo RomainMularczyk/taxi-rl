@@ -1,5 +1,6 @@
 from __future__ import annotations
 from enum import Enum
+from typing import TypedDict
 from lib.models.EnvironmentInfo import EnvironmentInfo
 
 
@@ -42,7 +43,6 @@ class Action(Enum):
         """
         if 'A' <= letter <= 'F':
             return Action(ord(letter) - 65)
-        
 
     @staticmethod
     def to_human_readable(action: int) -> str:
@@ -79,7 +79,7 @@ class Action(Enum):
         return Action(action).value
 
     @staticmethod
-    def available_actions(info: EnvironmentInfo):
+    def legal_actions(info: EnvironmentInfo):
         """
         Convert a Gymnasium indexed action into human readable format.
 
@@ -98,3 +98,15 @@ class Action(Enum):
             if action == 1:
                 actions.append(list(Action)[index].name)
         return tuple(actions)
+
+
+class ActionProbabilities(TypedDict):
+    """
+    Action associated with probabilities.
+    """
+    SOUTH: float
+    NORTH: float
+    EAST: float
+    WEST: float
+    PICK_UP: float
+    DROP_OFF: float
