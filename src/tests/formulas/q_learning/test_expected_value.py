@@ -15,5 +15,6 @@ def test_dice_expected_value():
     expected = 3.5
     assert result == expected
 
+
 def test_one_expected_value():
     pass
