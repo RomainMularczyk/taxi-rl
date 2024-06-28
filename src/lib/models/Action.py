@@ -1,3 +1,4 @@
+from __future__ import annotations
 from enum import Enum
 from lib.models.EnvironmentInfo import EnvironmentInfo
 
@@ -12,6 +13,36 @@ class Action(Enum):
     WEST = 3
     PICK_UP = 4
     DROP_OFF = 5
+
+    def to_letter(self) -> str:
+        """
+        Convert the action to a corresponding letter.
+
+        Returns
+        -------
+        str
+            The letter corresponding to the action.
+        """
+        return chr(65 + self.value)
+
+    @staticmethod
+    def from_letter(letter: str) -> Action:
+        """
+        Convert a letter to the corresponding action.
+
+        Parameters
+        ----------
+        letter: str
+            The letter representing the action.
+
+        Returns
+        -------
+        Action
+            The action corresponding to the letter.
+        """
+        if 'A' <= letter <= 'F':
+            return Action(ord(letter) - 65)
+        
 
     @staticmethod
     def to_human_readable(action: int) -> str:
