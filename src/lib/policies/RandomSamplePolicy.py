@@ -1,11 +1,14 @@
 import logging
+import numpy as np
+from gymnasium.wrappers.time_limit import TimeLimit as GymnasiumGameEnvironment
 from pydantic import TypeAdapter, ValidationError
 from lib.environment.environment import GameEnvironment
-from lib.models.Action import Action
+from lib.models.Action import Action, ActionProbabilities
 from lib.models.EnvironmentInfo import EnvironmentInfo
+from lib.policies.Policy import Policy
 
 
-class RandomSamplePolicy:
+class RandomSamplePolicy(Policy):
     """
     Sample randomly the next action to take from all
     the theoretical actions (including those that are
@@ -25,19 +28,32 @@ class RandomSamplePolicy:
 
     def __init__(
         self,
-        env: GameEnvironment,
-        p: float = 1/6
+        env: GymnasiumGameEnvironment,
+        seed: int | None = None
     ):
-        self.p = p
-        self.env = env
+        super().__init__(env=env, seed=seed)
         self.reward = 0.0
+
+    def actions_probability(self) -> ActionProbabilities:
+        """
+        Returns
+        -------
+        ActionProbabilities
+            Action associated with their probabilities.
+        """
+        action_names = [action.name for action in list(Action)]
+        action_prob = {
+            action: prob for action, prob in zip(
+                action_names, list(np.full(6, 1/6))
+            )
+        }
+        return action_prob  # type: ignore
 
     def next_action(
         self,
-        human_readable: bool = False,
         render: bool = True,
         display_actions: bool = False
-    ):
+    ) -> Action:
         """
         Choose the optimal next action.
 
@@ -45,8 +61,6 @@ class RandomSamplePolicy:
         ----------
         env: GameEnvironement
             The game environement.
-        human_readable: bool, default=False
-            Output the action chosen in a human readable format.
         render: bool, default=True
             Defines if the step should be displayed.
         display_actions: bool, default=False
@@ -55,7 +69,7 @@ class RandomSamplePolicy:
 
         Returns
         -------
-        int | str
+        Action
             The action chosen.
         """
         action = self.env.env.action_space.sample()
@@ -79,6 +93,4 @@ class RandomSamplePolicy:
 
         self.reward += float(reward)
 
-        if human_readable:
-            return Action.to_human_readable(action)
-        return action
+        return Action(action)
