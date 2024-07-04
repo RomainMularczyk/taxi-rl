@@ -1,10 +1,7 @@
-import logging
 import numpy as np
+from typing import List
 from gymnasium.wrappers.time_limit import TimeLimit as GymnasiumGameEnvironment
-from pydantic import TypeAdapter, ValidationError
-from lib.environment.environment import GameEnvironment
-from lib.models.Action import Action, ActionProbabilities
-from lib.models.EnvironmentInfo import EnvironmentInfo
+from lib.models.Action import Action, ActionProbabilities, ActionWithReward
 from lib.policies.Policy import Policy
 
 
@@ -33,9 +30,13 @@ class RandomSamplePolicy(Policy):
     ):
         super().__init__(env=env, seed=seed)
         self.reward = 0.0
+        self.type = Policy.Type.PROBABILISTIC
 
-    def actions_probability(self) -> ActionProbabilities:
+    @staticmethod
+    def actions_probability() -> ActionProbabilities:
         """
+        The actions associated with their outcome probability.
+
         Returns
         -------
         ActionProbabilities
@@ -47,50 +48,46 @@ class RandomSamplePolicy(Policy):
                 action_names, list(np.full(6, 1/6))
             )
         }
-        return action_prob  # type: ignore
+        return ActionProbabilities(**action_prob)
 
-    def next_action(
+    def possible_actions(self) -> List[Action]:
+        """
+        Return all the next available actions following the policy.
+
+        Returns
+        -------
+        List[Action]
+            A list of actions.
+        """
+        return list(Action)
+
+    def next_action(  # type: ignore
         self,
-        render: bool = True,
-        display_actions: bool = False
-    ) -> Action:
+        mask: np.ndarray | None = None
+    ) -> ActionWithReward:
         """
         Choose the optimal next action.
 
         Parameters
         ----------
-        env: GameEnvironement
-            The game environement.
-        render: bool, default=True
-            Defines if the step should be displayed.
-        display_actions: bool, default=False
-            Defines if the available actions at a given step should be
-            displayed.
+        mask: ndarray | None, default=None
+            The possible actions into which to sample.
 
         Returns
         -------
-        Action
-            The action chosen.
+        ActionWithReward
+            The action chosen associated with the reward from taking it.
         """
-        action = self.env.env.action_space.sample()
+        if mask is not None:
+            action = self.env.env.action_space.sample(mask)
+        else:
+            action = self.env.env.action_space.sample()
 
-        observation, reward, terminated, truncated, info = self.env.env.step(
-            action
+        new_state, reward, _, _, _ = self.env.env.step(action)
+        self.env.state = new_state
+
+        return ActionWithReward(
+            action=Action(action),
+            reward=float(reward),
+            probability=float(1/6)
         )
-        self.state = observation[0]
-
-        if render:
-            logging.info(self.env.env.render())
-        if display_actions:
-            try:
-                TypeAdapter(EnvironmentInfo).validate_python(info)
-                logging.info(Action.available_actions(info))  # type: ignore
-            except ValidationError:
-                logging.error(
-                    "The environment information does"
-                    " not have the expected format."
-                )
-
-        self.reward += float(reward)
-
-        return Action(action)
