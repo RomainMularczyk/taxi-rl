@@ -27,7 +27,9 @@ class GameEnvironment:
             state, info = self.env.reset(seed=seed)
         else:
             state, info = self.env.reset()
+        self.initial_state = state
         self.state = state
+        self.initial_info = EnvironmentInfo(**info)
         self.info = EnvironmentInfo(**info)
 
     def render(self) -> None:
@@ -67,3 +69,17 @@ class GameEnvironment:
         row = (self.env.s // 100) % 5
         column = (self.env.s // 20) % 5
         return (row + 1, column + 1)
+    
+    def passenger_pickedup(self, state) -> bool:
+        """
+        Know if the passenger is in the taxi.
+
+        Returns
+        -------
+        bool
+            True if the passenger is in the taxi.
+        """
+        _, _, passenger_location, _ = self.env.env.decode(state)
+        passenger_in_taxi = (passenger_location == 4)
+        return passenger_in_taxi
+

@@ -121,7 +121,7 @@ class Action(Enum):
 
         Returns
         -------
-        Tuple[str]
+        Tuple[Action]
             A tuple of available actions at a given step.
         """
         actions = []
