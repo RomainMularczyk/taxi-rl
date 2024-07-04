@@ -1,7 +1,10 @@
-from numpy import ndarray
+import numpy as np
+from typing import List, Tuple
+from tqdm import tqdm
 from lib.models.Policies import Policies
-from lib.models.Action import Action
+from lib.models.Action import Action, ActionWithReward
 from lib.data.q_table import QTable
+from lib.policies.Policy import Policy
 
 
 class QLearning:
@@ -21,70 +24,135 @@ class QLearning:
 
     def __init__(
         self,
-        initial_seed: int,
-        cutoff_score: int,
         observation_space: int,
         action_space: int,
         policy: Policies,
+        data: QTable | None = None,
+        cutoff_score: int = -100_000,
+        max_steps: int = 100,
         gamma: float = 1.0,
     ):
-        self.initial_seed = initial_seed
         self.cutoff_score = cutoff_score
+        self.max_steps = max_steps
         self.gamma: float = gamma
-        self.data = QTable(observation_space, action_space)
+        if data is None:
+            self.data = QTable(observation_space, action_space)
+        else:
+            self.data = data
         self.policy = policy
 
-    @classmethod
-    def train(cls):
-        while True:
-            # 1. Do step
-            # 2. Get reward
-            # 3. Have I win / Reached cutoff score ?
-            # 4. Update QTable => Bellman equations (QTable(a, s) => retrieve value)
-            pass
+    def train(self):
+        steps = 0
+        cumulative_reward = 0
+        with tqdm(total=self.max_steps):
+            while cumulative_reward > self.cutoff_score and steps < self.max_steps:
+                action, reward, result = self.q_star()
+                self.data[self.policy.env.state, action.value] = result
+                cumulative_reward += reward
+                steps += 1
 
-    def expected_value(self, n: ndarray) -> float:
+    @staticmethod
+    def expected_value(n: np.ndarray, p: np.ndarray) -> float:
         """
         Compute the expected value.
 
         Parameters
         ----------
-        n: int
-            Number of outcomes.
+        n: ndarray
+            Value of each outcome.
+        p: ndarray
+            Probabily of each outcome.
 
         Returns
         -------
         float
             The expected value.
         """
-        return (n * self.policy.p).sum()
+        return (n * p).sum()
 
-    def q_function(self, state_index: int, action_index: int):
+    def j(self) -> float:
         """
-        Compute the expected return after taking an action (a), starting
-        from a given state (s).
+        Compute the average expected value for each possible action at
+        a given state.
+
+        Returns
+        -------
+            The expected value for each possible action at a given state.
+        """
+        return np.array([  # type: ignore
+            next.probability * self.data[  # type: ignore
+                self.policy.env.state, next.action.value
+            ]
+            for next in self.rewards()
+        ]).sum()
+
+    def rewards(self) -> List[ActionWithReward]:
+        """
+        Collect the rewards for the possible actions provided by the policy.
+
+        Returns
+        -------
+        List[ActionWithReward]
+            A list of all actions associated with their reward and probability.
+        """
+        if self.policy.type is Policy.Type.PROBABILISTIC:
+            actions_reward = []
+            actions_probability = self.policy.actions_probability()  # type: ignore
+            for action in self.policy.possible_actions():  # type: ignore
+                action_with_reward = self.policy.take_action(action)
+                action_with_reward.probability = actions_probability\
+                    .model_dump()[action.name]  # type: ignore
+                actions_reward.append(action_with_reward)
+            return actions_reward
+        else:
+            raise TypeError(
+                "Rewards can only be cumulated on probabilistic policies."
+            )
+
+    def v(self, action: Action):
+        self.j()
+
+    def v_star(self):
+        pass
+
+    def q(self, action: Action) -> float:
+        """
+        Compute the result for the Q-function for a given action.
 
         Parameters
         ----------
-        state_index: int
-            The current state index.
-        action_index: int
-            The current action index.
+        action: Action
+            A given action.
 
         Returns
         -------
         float
-            The expected value of the cumulated rewards.
+            
         """
-        for action in list(Action):
-            self.policy.take_action(action)
-        self.data[state_index, action_index]
-        return self.expected_value(len(num_actions))
+        next = self.policy.take_action(action)
+        return next.reward + self.gamma * self.j()
 
-    def bellman_equations(self):
-        return self.expected_value(
-            self.gamma * self.expected_value(self.q_function(state_index, action_index))
+    def q_star(
+            self,
+            mask: np.ndarray | None = None
+    ) -> Tuple[Action, float, float]:
+        """
+        Compute the result for the Q-function following the optimal action.
+
+        Parameters
+        ----------
+        mask: np.ndarray, default=None
+            The possible actions into which to sample.
+
+        Returns
+        -------
+        Tuple[Action, float, float]
+            A tuple associating the action taken by the optimal policy,
+            the direct reward and the Q-value for taking that action.
+        """
+        next = self.policy.next_action(mask)  # type: ignore
+        return (
+            next.action,
+            next.reward,
+            float(next.reward + self.gamma * self.j())
         )
-        q[state, action] = q[state, action] + learning_rate_a * (
-                    reward + discount_factor_g * np.max(q[new_state, :]) - q[state, action]
-                )
