@@ -22,12 +22,11 @@ class GameEnvironment:
         seed: int | None = None,
     ):
         self.env = env
-
         # Init env with or without seed
         if seed:
-            state, info = self.env.env.reset(seed=seed)
+            state, info = self.env.reset(seed=seed)
         else:
-            state, info = self.env.env.reset()
+            state, info = self.env.reset()
         self.state = state
         self.info = EnvironmentInfo(**info)
 
@@ -35,18 +34,25 @@ class GameEnvironment:
         """
         Display the game environment.
         """
-        logger.info(self.env.render())
+        logger.info(self.env.env.render())
 
-    def back_to(self, seed: int) -> None:
+    def back_to(self, state: int) -> None:
         """
-        Resets the game environement in a previous seed.
+        Resets the game environement in a given state.
 
         Parameters
         ----------
-        seed: int
-            The seed to which reset the game environment into.
+        state: int
+            The state in which to reset the game environment.
         """
-        self.env.reset(seed=seed)
+        if state < self.env.observation_space.n and state > 0:  # type: ignore
+            self.env.env.unwrapped.s = state  # type: ignore
+            self.state = state
+        else:
+            raise ValueError(
+                "States value should be contained between 0 and"
+                f" {self.env.observation_space.n}."  # type: ignore
+            )
 
     def current_taxi_location(self) -> Tuple[int, int]:
         """
