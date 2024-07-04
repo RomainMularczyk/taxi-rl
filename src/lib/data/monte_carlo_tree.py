@@ -1,6 +1,6 @@
-import math
 from lib.models.Action import Action
 from lib.models.Node import Node
+from lib.models.EnvironmentInfo import EnvironmentInfo
 
 
 class MonteCarloTree:
@@ -9,7 +9,13 @@ class MonteCarloTree:
     each node represent the position on the map.
     """
 
-    def __init__(self, actions: list[Action], depth: int):
+    def __init__(
+        self, 
+        root_state: int,
+        root_info: EnvironmentInfo,
+        actions: list[Action], 
+        depth: int
+    ):
         """
         actions: [Action]
             All the actions the agent can make.
@@ -21,18 +27,22 @@ class MonteCarloTree:
         self.actions = actions
         self.root_node = Node(
             action=None,
-            state=None,
+            state=root_state,
+            env_info=root_info,
             parent=None,
             children=[],
             depth=0
         )
-        self.pick_best_score = -math.inf
-        self.drop_best_score = -math.inf
+        self.picking_node: Node = None
+        self.droping_node: Node = None
         # Build the tree
         self._create_tree(
             root_node=self.root_node,
             max_depth=self.depth
         )
+        self.bfs: list[Node] = []
+        self.visited_node = 1
+        self.state_history: set[int] = set([root_state])
 
     def _create_tree(self, root_node: Node, max_depth: int) -> None:
         """
