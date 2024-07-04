@@ -127,7 +127,7 @@ class QLearning:
         Returns
         -------
         float
-            
+            The reward for taking the provided action.
         """
         next = self.policy.take_action(action)
         return next.reward + self.gamma * self.j()
