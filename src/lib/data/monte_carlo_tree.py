@@ -11,8 +11,7 @@ class MonteCarloTree:
 
     def __init__(
         self, 
-        root_state: int,
-        root_info: EnvironmentInfo,
+        root_node: Node,
         actions: list[Action], 
         depth: int
     ):
@@ -23,18 +22,10 @@ class MonteCarloTree:
             The maximum allowed amount of steps the agent can make
             if it's the furthest from the pickup point.
         """
+        self.root_node = root_node
         self.depth = depth
         self.actions = actions
-        self.root_node = Node(
-            action=None,
-            state=root_state,
-            env_info=root_info,
-            parent=None,
-            children=[],
-            depth=0
-        )
-        self.picking_node: Node = None
-        self.droping_node: Node = None
+        self.winning_node: Node = None
         # Build the tree
         self._create_tree(
             root_node=self.root_node,
@@ -42,7 +33,8 @@ class MonteCarloTree:
         )
         self.bfs: list[Node] = []
         self.visited_node = 1
-        self.state_history: set[int] = set([root_state])
+        self.state_history: set[int] = set([root_node.state])
+        self.deepest_layer_nodes: list[Node] = [] 
 
     def _create_tree(self, root_node: Node, max_depth: int) -> None:
         """
