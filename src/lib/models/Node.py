@@ -78,7 +78,7 @@ class Node:
                 [Parent] {self.parent.fullpath}
                 [Children] {[c.path for c in self.children]}
                 [State] {self.state}
-                [Rewards/Cumul] {self.reward}/{self.cumul_reward}
+                [Reward/Cumul] {self.reward}/{self.cumul_reward}
             """)
         except AttributeError:
             return textwrap.dedent(f"""
@@ -90,9 +90,15 @@ class Node:
         print(self)
 
     @property
-    def fullpath(self):
+    def fullpath(self) -> str:
         """
         Generate the fullpath of this Node recursivly.
+
+        Returns
+        -------
+        fullpath
+            The full path of the Node, meaning the path of 
+            each its ancesters that leads to him.
         """
         if self.parent is None:
             return self.path
@@ -124,7 +130,7 @@ class Node:
         node: Node
             The parent Node of self that is at layer 1.
         """
-        if self.depth == 1:
+        if self.depth <= 1 :
             return self
         else: 
             return self.parent.first_layer_parent

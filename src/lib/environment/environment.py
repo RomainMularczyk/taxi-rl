@@ -47,7 +47,7 @@ class GameEnvironment:
         state: int
             The state in which to reset the game environment.
         """
-        if state < self.env.observation_space.n and state > 0:  # type: ignore
+        if state < self.env.observation_space.n and state >= 0:  # type: ignore
             self.env.env.unwrapped.s = state  # type: ignore
             self.state = state
         else:
@@ -70,7 +70,7 @@ class GameEnvironment:
         column = (self.env.s // 20) % 5
         return (row + 1, column + 1)
     
-    def passenger_pickedup(self, state) -> bool:
+    def passenger_pickedup(self, state: int) -> bool:
         """
         Know if the passenger is in the taxi.
 
@@ -79,7 +79,20 @@ class GameEnvironment:
         bool
             True if the passenger is in the taxi.
         """
-        _, _, passenger_location, _ = self.env.env.decode(state)
+        # _, _, passenger_location, _ = self.env.env.decode(state)
+        _, _, passenger_location, _ = self.env.unwrapped.decode(state)
         passenger_in_taxi = (passenger_location == 4)
         return passenger_in_taxi
 
+    def passenger_droppedoff(self, state: int) -> bool:
+        """
+        Know if the passenger has been dropped off the taxi at the winning state.
+
+        Returns
+        -------
+        bool
+            True if the passenger has been dropped in the desired place.
+            This means you had a reward of +20 for this action.
+        """
+        _, _, passenger_location, destination = self.env.unwrapped.decode(state)
+        return passenger_location == destination
