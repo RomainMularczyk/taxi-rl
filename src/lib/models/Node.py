@@ -24,13 +24,15 @@ class Node:
     """
     def __init__(
         self, 
-        action: Action | None, 
         depth: int,
-        parent: Node | None, 
+        action: Action | None = None, 
+        parent: Node | None = None, 
         state: int | None = None, 
         env_info: EnvironmentInfo | None = None, 
         children: List[Node] | List = [],
         path: str | None = '',
+        reward: float | None = .0,
+        cumul_reward: float | None = .0
     ):
         self.action = action
         self.path = path
@@ -39,11 +41,11 @@ class Node:
         self.parent = parent
         self.children = children
         self.env_info = env_info
-        self.reward: int = 0
-        self.cumul_reward: int = 0
+        self.reward = reward
+        self.cumul_reward = cumul_reward
 
     
-    def update_reward(self, reward: int) -> None:
+    def update_reward(self, reward: float) -> None:
         """
         Update the reward and cumulative reward from the Node.
 
@@ -72,10 +74,11 @@ class Node:
     def __repr__(self):
         try:
             return textwrap.dedent(f"""
-                [Node] {self.path}
-                [Parent] {self.parent.path}
+                [Node] {self.fullpath}
+                [Parent] {self.parent.fullpath}
                 [Children] {[c.path for c in self.children]}
                 [State] {self.state}
+                [Reward/Cumul] {self.reward}/{self.cumul_reward}
             """)
         except AttributeError:
             return textwrap.dedent(f"""
@@ -87,9 +90,15 @@ class Node:
         print(self)
 
     @property
-    def fullpath(self):
+    def fullpath(self) -> str:
         """
         Generate the fullpath of this Node recursivly.
+
+        Returns
+        -------
+        fullpath
+            The full path of the Node, meaning the path of 
+            each its ancesters that leads to him.
         """
         if self.parent is None:
             return self.path
@@ -111,3 +120,17 @@ class Node:
                 actions.append(Action.from_letter(char))
         return actions
 
+    @property
+    def first_layer_parent(self) -> Node:
+        """
+        Find the oldest parent of a Node that is not the root Node.
+
+        Returns
+        -------
+        node: Node
+            The parent Node of self that is at layer 1.
+        """
+        if self.depth <= 1 :
+            return self
+        else: 
+            return self.parent.first_layer_parent
