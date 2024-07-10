@@ -72,15 +72,9 @@ class RandomSamplePolicy(Policy):
 
     def next_action(  # type: ignore
         self,
-        mask: np.ndarray | None = None
     ) -> ActionWithReward:
         """
         Choose the optimal next action.
-
-        Parameters
-        ----------
-        mask: ndarray | None, default=None
-            The possible actions into which to sample.
 
         Returns
         -------
@@ -90,10 +84,7 @@ class RandomSamplePolicy(Policy):
             - Its probability of occurring.
             - The current game status (terminated, truncated, running)
         """
-        if mask is not None:
-            action = self.game_env.env.action_space.sample(mask)
-        else:
-            action = self.game_env.env.action_space.sample()
+        action = self.game_env.env.action_space.sample()
 
         new_state, reward, term, trunc, _ = self.game_env.env.step(action)
         self.game_env.state = new_state
