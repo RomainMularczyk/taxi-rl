@@ -1,6 +1,8 @@
+from typing import List, Set
+from tqdm import tqdm
 from lib.models.Action import Action
 from lib.models.Node import Node
-from lib.models.EnvironmentInfo import EnvironmentInfo
+
 
 class MonteCarloTree:
     """
@@ -9,11 +11,11 @@ class MonteCarloTree:
     """
 
     def __init__(
-        self, 
+        self,
         root_node: Node,
-        actions: list[Action], 
+        actions: list[Action],
         depth: int
-    ):
+    ) -> None:
         """
         actions: [Action]
             All the actions the agent can make.
@@ -24,16 +26,16 @@ class MonteCarloTree:
         self.root_node = root_node
         self.depth = depth
         self.actions = actions
-        self.winning_node: Node = None
+        self.winning_node = None
         # Build the tree
-        self._create_tree(
-            root_node=self.root_node,
-            max_depth=self.depth
-        )
         self.bfs: list[Node] = []
         self.visited_node = 1
-        self.state_history: set[int] = set([root_node.state])
-        self.deepest_layer_nodes: list[Node] = [] 
+        self.state_history: Set[int | None] = set([root_node.state])
+        self.deepest_layer_nodes: List[Node] = []
+        self._create_tree(
+            root_node=self.root_node,
+            max_depth=self.depth,
+        )
 
     def _create_tree(self, root_node: Node, max_depth: int) -> None:
         """
@@ -66,5 +68,5 @@ class MonteCarloTree:
                 root_node.children.append(child_node)
                 self._create_tree(
                     child_node,
-                    max_depth=max_depth
+                    max_depth=max_depth,
                 )
