@@ -6,7 +6,7 @@ from lib.policies.RandomSamplePolicy import RandomSamplePolicy
 
 def test_dice_expected_value():
     env = gym.make("Taxi-v3")
-    policy = RandomSamplePolicy(env=env)  # type: ignore
+    policy = RandomSamplePolicy(game_env=env)  # type: ignore
     q_learning = QLearning(
         cutoff_score=0,
         observation_space=env.observation_space.n,  # type: ignore
@@ -22,7 +22,7 @@ def test_dice_expected_value():
 
 def test_one_expected_value():
     env = gym.make("Taxi-v3")
-    policy = RandomSamplePolicy(env=env)  # type: ignore
+    policy = RandomSamplePolicy(game_env=env)  # type: ignore
     q_learning = QLearning(
         cutoff_score=0,
         observation_space=env.observation_space.n,  # type: ignore

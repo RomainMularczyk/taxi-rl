@@ -1,7 +1,8 @@
 import numpy as np
-from typing import List
+from typing import Tuple
 from gymnasium.wrappers.time_limit import TimeLimit as GymnasiumGameEnvironment
 from lib.models.Action import Action, ActionProbabilities, ActionWithReward
+from lib.models.GameStatus import GameStatus
 from lib.policies.Policy import Policy
 
 
@@ -13,24 +14,32 @@ class RandomSamplePolicy(Policy):
 
     Attributes
     ----------
-    p: float
-        The probability of a given action to be taken.
-    env: GameEnvironment
-        The game environment.
-    reward: float
-        The reward collected for taking a given step.
-    state: int
-        The seed representing a given state of the game environment.
+    type: Policy.Type
+        The type of policy. It can be either :
+        - Probabilistic
+        - Deterministic
     """
 
     def __init__(
         self,
-        env: GymnasiumGameEnvironment,
+        game_env: GymnasiumGameEnvironment,
         seed: int | None = None
     ):
-        super().__init__(env=env, seed=seed)
-        self.reward = 0.0
+        super().__init__(game_env=game_env, seed=seed)
+        self.seed = seed
         self.type = Policy.Type.PROBABILISTIC
+
+    def reset_hyperparameters(self, reset_env: bool = False) -> None:
+        """
+        Resets the environment and the hyperparameters of the policy.
+
+        Parameters
+        ----------
+        reset_env: bool, default=False
+            Decide if the environment should be also reset.
+        """
+        if reset_env:
+            self.game_env.env.reset(seed=self.seed)
 
     @staticmethod
     def actions_probability() -> ActionProbabilities:
@@ -50,16 +59,16 @@ class RandomSamplePolicy(Policy):
         }
         return ActionProbabilities(**action_prob)
 
-    def possible_actions(self) -> List[Action]:
+    def possible_actions(self) -> Tuple[Action, ...]:
         """
         Return all the next available actions following the policy.
 
         Returns
         -------
-        List[Action]
-            A list of actions.
+        Tuple[Action, ...]
+            A list of all possible actions to take from the current state.
         """
-        return list(Action)
+        return tuple(list(Action))
 
     def next_action(  # type: ignore
         self,
@@ -76,18 +85,37 @@ class RandomSamplePolicy(Policy):
         Returns
         -------
         ActionWithReward
-            The action chosen associated with the reward from taking it.
+            The action associated with both :
+            - Its immediate reward
+            - Its probability of occurring.
+            - The current game status (terminated, truncated, running)
         """
         if mask is not None:
-            action = self.env.env.action_space.sample(mask)
+            action = self.game_env.env.action_space.sample(mask)
         else:
-            action = self.env.env.action_space.sample()
+            action = self.game_env.env.action_space.sample()
 
-        new_state, reward, _, _, _ = self.env.env.step(action)
-        self.env.state = new_state
+        new_state, reward, term, trunc, _ = self.game_env.env.step(action)
+        self.game_env.state = new_state
 
-        return ActionWithReward(
-            action=Action(action),
-            reward=float(reward),
-            probability=float(1/6)
-        )
+        if term:
+            return ActionWithReward(
+                action=Action(action),
+                reward=float(reward),
+                probability=float(1/6),
+                game_status=GameStatus.TERMINATED
+            )
+        elif trunc:
+            return ActionWithReward(
+                action=Action(action),
+                reward=float(reward),
+                probability=float(1/6),
+                game_status=GameStatus.TRUNCATED
+            )
+        else:
+            return ActionWithReward(
+                action=Action(action),
+                reward=float(reward),
+                probability=float(1/6),
+                game_status=GameStatus.RUNNING
+            )

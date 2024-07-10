@@ -27,14 +27,14 @@ class QTable:
         )
         if data is None:
             try:
-                self._values = np.zeros(
+                self.values = np.zeros(
                     (int(observation_space), int(action_space))
                 )
             except TypeError:
                 raise err
         else:
             if data.shape == (observation_space, action_space):
-                self._values = data
+                self.values = data
             else:
                 raise err
 
@@ -58,7 +58,7 @@ class QTable:
     ) -> None:
         if type(value) is float:
             if type(index) is tuple or type(index) is list:
-                self._values[*index] = value
+                self.values[*index] = value
             else:
                 raise ValueError("Index should be either a list or a tuple.")
         else:
@@ -79,7 +79,7 @@ class QTable:
             A DataFrame representing the Q-table.
         """
         actions = [action.name for action in list(Action)]
-        df = DataFrame(self._values, columns=actions)  # type: ignore
+        df = DataFrame(self.values, columns=actions)  # type: ignore
         if scrollable:
             pd.set_option("display.max_rows", None)
 

@@ -7,7 +7,7 @@ from lib.formulas.q_learning import QLearning
 
 def test_random_sample_policy_v_function():
     env = gym.make("Taxi-v3")
-    policy = RandomSamplePolicy(env=env, seed=42)  # type: ignore
+    policy = RandomSamplePolicy(game_env=env, seed=42)  # type: ignore
     q_learning = QLearning(
         cutoff_score=0,
         observation_space=env.observation_space.n,  # type: ignore
@@ -19,7 +19,7 @@ def test_random_sample_policy_v_function():
 
 def test_random_sample_policy_v_star_function():
     env = gym.make("Taxi-v3")
-    policy = RandomSamplePolicy(env=env, seed=42)  # type: ignore
+    policy = RandomSamplePolicy(game_env=env, seed=42)  # type: ignore
     q_learning = QLearning(
         cutoff_score=0,
         observation_space=env.observation_space.n,  # type: ignore
@@ -31,7 +31,7 @@ def test_random_sample_policy_v_star_function():
 
 def test_legal_sample_policy_v_function():
     env = gym.make("Taxi-v3")
-    policy = LegalSamplePolicy(env=env, seed=42)  # type: ignore
+    policy = LegalSamplePolicy(game_env=env, seed=42)  # type: ignore
     q_learning = QLearning(
         cutoff_score=0,
         observation_space=env.observation_space.n,  # type: ignore
@@ -42,7 +42,7 @@ def test_legal_sample_policy_v_function():
 
 def test_legal_sample_policy_v_star_function():
     env = gym.make("Taxi-v3")
-    policy = LegalSamplePolicy(env=env, seed=42)  # type: ignore
+    policy = LegalSamplePolicy(game_env=env, seed=42)  # type: ignore
     q_learning = QLearning(
         cutoff_score=0,
         observation_space=env.observation_space.n,  # type: ignore

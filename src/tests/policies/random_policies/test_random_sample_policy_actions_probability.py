@@ -5,7 +5,7 @@ from lib.policies.RandomSamplePolicy import RandomSamplePolicy
 
 def test_random_sample_policy_actions_probability():
     env = gym.make("Taxi-v3")
-    policy = RandomSamplePolicy(env=env)  # type: ignore
+    policy = RandomSamplePolicy(game_env=env)  # type: ignore
     result = policy.actions_probability()
     expected = ActionProbabilities(**{
         "SOUTH": 1/6,

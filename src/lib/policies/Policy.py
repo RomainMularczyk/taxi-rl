@@ -1,14 +1,20 @@
+import numpy as np
 from abc import ABCMeta, abstractmethod
 from enum import Enum
-from typing import List
 from gymnasium.wrappers.time_limit import TimeLimit as GymnasiumGameEnvironment
 from lib.environment.environment import GameEnvironment
 from lib.models.Action import Action, ActionWithReward
+from lib.models.GameStatus import GameStatus, GameExitStatus
 
 
 class Policy(metaclass=ABCMeta):
     """
     Abstract representation of a policy.
+
+    Attributes
+    ----------
+    game_env: GymnasiumGameEnvironment
+        The game environment.
     """
 
     class Type(Enum):
@@ -17,22 +23,55 @@ class Policy(metaclass=ABCMeta):
 
     def __init__(
         self,
-        env: GymnasiumGameEnvironment,
+        game_env: GymnasiumGameEnvironment,
         seed: int | None
     ):
-        self.env = GameEnvironment(env=env, seed=seed)
+        self.game_env = GameEnvironment(env=game_env, seed=seed)
 
     @abstractmethod
-    def next_action(self) -> ActionWithReward:
-        pass
-
-    @abstractmethod
-    def possible_actions(self) -> List[Action]:
-        pass
-
-    def take_action(self, action: Action | int) -> ActionWithReward:
+    def next_action(
+        self,
+        mask: np.ndarray | None
+    ) -> ActionWithReward | GameExitStatus:
         """
-        Take a given action.
+        Compute the next optimal action.
+
+        Returns
+        -------
+        ActionWithReward | GameExitStatus
+            The action associated with its immediate reward and its
+            probability of occurring. If the game is ended prematurely,
+            return a GameStatus.
+        """
+        pass
+
+    def is_game_over(self, action: ActionWithReward | GameExitStatus) -> bool:
+        """
+        Verify if the game is over.
+
+        Parameters
+        ----------
+        action: ActionWithReward | GameExitStatus
+            The current action taken.
+
+        Returns
+        -------
+        bool
+            Returns True if the game is over.
+        """
+        if action == GameStatus.TERMINATED:
+            return True
+        elif action == GameStatus.TRUNCATED:
+            return True
+        else:
+            return False
+
+    def take_action(
+        self,
+        action: Action | int,
+    ) -> ActionWithReward:
+        """
+        Take a given action (deterministic, probability=1.0).
 
         Parameters
         ----------
@@ -41,8 +80,11 @@ class Policy(metaclass=ABCMeta):
 
         Returns
         -------
-        float
-            The reward for taking the action.
+        ActionWithReward
+            The action associated with both :
+            - Its immediate reward
+            - Its probability of occurring.
+            - The current game status (terminated, truncated, running)
 
         Raises
         ------
@@ -50,22 +92,51 @@ class Policy(metaclass=ABCMeta):
             If the action is neither an integer or an Action.
         """
         if type(action) is int:
-            new_state, reward, _, _, _ = self.env.env.step(
+            new_state, reward, term, trunc, _ = self.game_env.env.step(
                 action
             )
-            self.env.state = new_state
-            return ActionWithReward(
-                action=Action(action),
-                reward=float(reward)
-            )
+            self.game_env.state = new_state
+            if term:
+                return ActionWithReward(
+                    action=Action(action),
+                    reward=float(reward),
+                    game_status=GameStatus.TERMINATED
+                )
+            elif trunc:
+                return ActionWithReward(
+                    action=Action(action),
+                    reward=float(reward),
+                    game_status=GameStatus.TRUNCATED
+                )
+            else:
+                return ActionWithReward(
+                    action=Action(action),
+                    reward=float(reward),
+                    probability=1.0,
+                    game_status=GameStatus.RUNNING
+                )
         elif type(action) is Action:
-            new_state, reward, _, _, _ = self.env.env.step(
+            new_state, reward, term, trunc, _ = self.game_env.env.step(
                 action.value
             )
-            self.env.state = new_state
+            self.game_env.state = new_state
+            if term:
+                return ActionWithReward(
+                    action=Action(action),
+                    reward=float(reward),
+                    game_status=GameStatus.TERMINATED
+                )
+            elif trunc:
+                return ActionWithReward(
+                    action=Action(action),
+                    reward=float(reward),
+                    game_status=GameStatus.TRUNCATED
+                )
             return ActionWithReward(
                 action=action,
-                reward=float(reward)
+                reward=float(reward),
+                probability=1.0,
+                game_status=GameStatus.RUNNING
             )
         else:
             raise TypeError(
