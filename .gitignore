@@ -9,8 +9,5 @@
 *__pycache__/
 *.ipynb_checkpoints/
 
-# Notebooks
-*.ipynb
-
 # PDFs
 *.pdf
