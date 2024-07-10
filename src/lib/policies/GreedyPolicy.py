@@ -24,19 +24,21 @@ class GreedyPolicy(Policy):
         seed: int | None = None
     ) -> None:
         super().__init__(game_env=game_env, seed=seed)
-        self.type = Policy.Type.DETERMINISTIC
+        self.seed = seed
 
-    def reset_hyperpameters(self) -> None:
+    def reset_hyperparameters(self, reset_env: bool = False) -> None:
         """
         Resets the environment and the hyperparameters of the policy.
-        """
-        self.game_env.env.reset()
 
-    def next_action(  # type: ignore
-        self,
-        action: Action,
-        mask: np.ndarray | None = None,
-    ) -> ActionWithReward:
+        Parameters
+        ----------
+        reset_env: bool, default=False
+            Decide if the environment should be also reset.
+        """
+        if reset_env:
+            self.game_env.env.reset(seed=self.seed)
+
+    def next_action(self, action: Action) -> ActionWithReward:  # type: ignore
         """
         Returns the next action maximizing the immediate reward.
 
@@ -60,30 +62,4 @@ class GreedyPolicy(Policy):
         ValueError
             If no optimal action could be found.
         """
-        if mask is not None:
-            action = self.game_env.env.action_space.sample(mask)
-            new_state, reward, term, trunc, _ = self.game_env.env.step(action)
-            self.game_env.state = new_state
-            if term:
-                return ActionWithReward(
-                    action=Action(action),
-                    reward=float(reward),
-                    probability=1.0,
-                    game_status=GameStatus.TERMINATED
-                )
-            elif trunc:
-                return ActionWithReward(
-                    action=Action(action),
-                    reward=float(reward),
-                    probability=1.0,
-                    game_status=GameStatus.TRUNCATED
-                )
-            else:
-                return ActionWithReward(
-                    action=Action(action),
-                    reward=float(reward),
-                    probability=1.0,
-                    game_status=GameStatus.RUNNING
-                )
-        else:
-            return self.take_action(action)
+        return self.take_action(action)
