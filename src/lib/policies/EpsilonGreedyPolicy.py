@@ -3,7 +3,6 @@ from gymnasium.wrappers.time_limit import TimeLimit as GymnasiumGameEnvironment
 from lib.models.Action import Action, ActionWithReward
 from lib.models.GameStatus import GameStatus
 from lib.policies.GreedyPolicy import GreedyPolicy
-from lib.policies.Policy import Policy
 
 
 class EpsilonGreedyPolicy(GreedyPolicy):
@@ -44,7 +43,6 @@ class EpsilonGreedyPolicy(GreedyPolicy):
         self.epsilon = epsilon
         self.decay_rate = decay_rate
         self._steps = 0
-        self.type = Policy.Type.DETERMINISTIC
 
     def reset_hyperparameters(
         self,
@@ -146,7 +144,6 @@ class EpsilonGreedyPolicy(GreedyPolicy):
     def next_action(
         self,
         action: Action,
-        mask: np.ndarray | None = None,
     ) -> ActionWithReward:
         """
         Returns the next action following the epsilon greedy tradeoff.
@@ -159,31 +156,6 @@ class EpsilonGreedyPolicy(GreedyPolicy):
             return a GameStatus.
         """
         self._steps += 1
-        if mask is not None:
-            action = self.game_env.env.action_space.sample(mask)
-            new_state, reward, term, trunc, _ = self.game_env.env.step(action)
-            self.game_env.state = new_state
-            if term:
-                return ActionWithReward(
-                    action=Action(action),
-                    reward=float(reward),
-                    probability=float(1/6),
-                    game_status=GameStatus.TERMINATED
-                )
-            elif trunc:
-                return ActionWithReward(
-                    action=Action(action),
-                    reward=float(reward),
-                    probability=float(1/6),
-                    game_status=GameStatus.TRUNCATED
-                )
-            else:
-                return ActionWithReward(
-                    action=Action(action),
-                    reward=float(reward),
-                    probability=1.0,
-                    game_status=GameStatus.RUNNING
-                )
         random = np.random.uniform(0.0, 1.0)
 
         if random >= self.epsilon:
