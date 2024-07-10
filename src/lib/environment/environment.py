@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Any, List, Tuple
 from gymnasium.wrappers.time_limit import TimeLimit as GymnasiumGameEnvironment
 from lib.models.EnvironmentInfo import EnvironmentInfo
 from lib.logs.logger import get_logger
@@ -32,11 +32,11 @@ class GameEnvironment:
         self.initial_info = EnvironmentInfo(**info)
         self.info = EnvironmentInfo(**info)
 
-    def render(self) -> None:
+    def render(self) -> List[Any] | None:
         """
         Display the game environment.
         """
-        logger.info(self.env.env.render())
+        return self.env.render()
 
     def back_to(self, state: int) -> None:
         """
@@ -69,7 +69,7 @@ class GameEnvironment:
         row = (self.env.s // 100) % 5
         column = (self.env.s // 20) % 5
         return (row + 1, column + 1)
-    
+
     def passenger_pickedup(self, state: int) -> bool:
         """
         Know if the passenger is in the taxi.
@@ -80,13 +80,14 @@ class GameEnvironment:
             True if the passenger is in the taxi.
         """
         # _, _, passenger_location, _ = self.env.env.decode(state)
-        _, _, passenger_location, _ = self.env.unwrapped.decode(state)
+        _, _, passenger_location, _ = self.env.unwrapped.decode(state)  # type: ignore
         passenger_in_taxi = (passenger_location == 4)
         return passenger_in_taxi
 
-    def passenger_droppedoff(self, state: int) -> bool:
+    def passenger_droppedoff(self, state: int | None) -> bool:
         """
-        Know if the passenger has been dropped off the taxi at the winning state.
+        Know if the passenger has been dropped off the taxi at the
+        winning state.
 
         Returns
         -------
@@ -94,5 +95,12 @@ class GameEnvironment:
             True if the passenger has been dropped in the desired place.
             This means you had a reward of +20 for this action.
         """
-        _, _, passenger_location, destination = self.env.unwrapped.decode(state)
+        if state is None:
+            raise ValueError(
+                "You can't know if the passenger dropped off if"
+                " the state is unknown."
+            )
+        _, _, passenger_location, destination = self.env.unwrapped.decode(  # type: ignore
+            state
+        )
         return passenger_location == destination
