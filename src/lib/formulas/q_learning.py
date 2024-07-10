@@ -1,7 +1,6 @@
 import numpy as np
-from typing import List, Tuple
+from typing import List
 from tqdm import tqdm
-from lib.errors.GameExitException import GameExitException
 from lib.models.Action import Action, ActionWithReward
 from lib.models.GameStatus import GameStatus
 from lib.models.Metrics import EpisodeMetrics, StepResult
@@ -10,6 +9,7 @@ from lib.models.Metrics import Result
 from lib.data.q_table import QTable
 from lib.policies.GreedyPolicy import GreedyPolicy
 from lib.policies.EpsilonGreedyPolicy import EpsilonGreedyPolicy
+from lib.policies.MonteCarloPolicy import MonteCarloPolicy
 from lib.policies.Policy import Policy
 
 
@@ -258,10 +258,11 @@ class QLearning:
         """
         # Take the new action and update state
         if type(self.policy) is GreedyPolicy \
-           or type(self.policy) is EpsilonGreedyPolicy:
-            current = self.policy.next_action(self.v_star(action=True), mask)  # type: ignore
+           or type(self.policy) is EpsilonGreedyPolicy \
+           or type(self.policy) is MonteCarloPolicy:
+            current = self.policy.next_action(self.v_star(action=True))  # type: ignore
         else:
-            current = self.policy.next_action(mask)  # type: ignore
+            current = self.policy.next_action()  # type: ignore
 
         if advantage:
             return Result(
