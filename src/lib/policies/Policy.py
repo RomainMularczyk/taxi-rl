@@ -1,4 +1,3 @@
-import numpy as np
 from abc import ABCMeta, abstractmethod
 from enum import Enum
 from gymnasium.wrappers.time_limit import TimeLimit as GymnasiumGameEnvironment
@@ -29,10 +28,7 @@ class Policy(metaclass=ABCMeta):
         self.game_env = GameEnvironment(env=game_env, seed=seed)
 
     @abstractmethod
-    def next_action(
-        self,
-        mask: np.ndarray | None
-    ) -> ActionWithReward | GameExitStatus:
+    def next_action(self) -> ActionWithReward:
         """
         Compute the next optimal action.
 
