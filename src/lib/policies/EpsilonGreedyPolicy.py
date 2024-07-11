@@ -33,7 +33,7 @@ class EpsilonGreedyPolicy(GreedyPolicy):
         game_env: GymnasiumGameEnvironment,
         legal: bool = False,
         epsilon: float = 1.0,
-        decay_rate: float = 0.001,
+        decay_rate: float = 0.01,
         seed: int | None = None
     ):
         super().__init__(game_env=game_env, seed=seed)
