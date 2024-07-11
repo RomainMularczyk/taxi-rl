@@ -34,7 +34,6 @@ class QLearning:
         action_space: int,
         policy: Policies,
         data: QTable | None = None,
-        stable_env: bool = True,
         advantage: bool = True,
         max_steps: int = 100,
         gamma: float = 1.0,
@@ -43,7 +42,6 @@ class QLearning:
         self.max_steps = max_steps
         self.gamma = gamma
         self.lr = lr
-        self.stable_env = stable_env
         self.advantage = advantage
         if data is None:
             self.data = QTable(observation_space, action_space)
