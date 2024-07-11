@@ -1,7 +1,5 @@
-import numpy as np
 from gymnasium.wrappers.time_limit import TimeLimit as GymnasiumGameEnvironment
 from lib.models.Action import Action, ActionWithReward
-from lib.models.GameStatus import GameStatus
 from lib.policies.Policy import Policy
 
 
