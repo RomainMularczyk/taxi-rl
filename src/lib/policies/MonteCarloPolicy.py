@@ -1,38 +1,46 @@
+import logging
 import random
-from typing import List, Tuple
+from typing import Tuple
+from gymnasium.wrappers.time_limit import TimeLimit as GymnasiumGameEnvironment
 from lib.data.monte_carlo_tree import MonteCarloTree
 from lib.policies.Policy import Policy
 from lib.models.Action import Action, ActionWithReward
+from lib.models.GameStatus import GameStatus
 from lib.models.Stage import Stage
 from lib.models.Node import Node
 from lib.models.EnvironmentInfo import EnvironmentInfo
-from lib.environment.environment import GameEnvironment
 from lib.errors.GameAlreadyWonException import GameAlreadyWonException
 from lib.logs.logger import get_logger
 
 
 LOGGER = get_logger()
+LOGGER.setLevel(logging.ERROR)
+
 
 class MonteCarloPolicy(Policy):
     """
-    This policy will choose action based on the MonteCarloTree built after giving 2 parameters :
-    actions: a list [int] of all actions the agent can make
-    depth: the depth of the tree, meaning the maximum amount of steps the agent might have to take to complete pickup/dropoff
+    This policy will choose action based on the MonteCarloTree built
+    after giving 2 parameters :
+    - actions: a list [int] of all actions the agent can make
+    - depth: the depth of the tree, meaning the maximum amount of steps
+    the agent might have to take to complete pickup/dropoff
     """
 
     def __init__(
-        self, 
-        game_env: GameEnvironment, 
-        depth: int
+        self,
+        game_env: GymnasiumGameEnvironment,
+        depth: int,
+        seed: int | None = None
     ):
-        self.game_env: GameEnvironment = game_env
+        super().__init__(game_env=game_env, seed=seed)
+        self.seed = seed
         self.depth = depth
         self.actions: list[Action] = list(Action)
 
         root_node = Node(
             depth=0,
-            state=game_env.initial_state,
-            env_info=game_env.initial_info
+            state=self.game_env.initial_state,
+            env_info=self.game_env.initial_info
         )
         self.current_node: Node = root_node
         self.current_stage: Stage = Stage.PICK
@@ -41,15 +49,29 @@ class MonteCarloPolicy(Policy):
             root_node=root_node,
             depth=depth,
         )
-        self.drop_tree = None
-    
+        self.drop_tree: MonteCarloTree | None = None
+
+    def reset_hyperparameters(self, reset_env: bool = False) -> None:
+        """
+        Resets the environment and the hyperparameters of the policy.
+
+        Parameters
+        ----------
+        reset_env: bool, default=False
+            Decide if the environment should be also reset.
+        """
+        if reset_env:
+            self.__init__(self.game_env.env, depth=self.depth, seed=self.seed)
+
     def possible_actions(self) -> Tuple[Action, ...]:
         return Action.legal_actions(self.game_env.info.action_mask)
-    
-    def next_action(self) -> ActionWithReward:
+
+    def next_action(self, render: bool = False) -> ActionWithReward:
         """
-        Choose the next action to take after having built a Tree of `self.depth`.
-        `next_action`will find the `best_node` and then return its `first_layer_parent`.
+        Choose the next action to take after having built a Tree
+        of `self.depth`.
+        `next_action`will find the `best_node` and then return its
+        `first_layer_parent`.
 
         Returns
         -------
@@ -57,7 +79,10 @@ class MonteCarloPolicy(Policy):
             The ActionWithReward representing the next action to take.
         """
         if self.game_env.passenger_droppedoff(self.current_node.state):
-            raise GameAlreadyWonException(f"You can't call next_action() cause the game has finished, the passenger is succeffully dropped off.")
+            raise GameAlreadyWonException(
+                "You can't call next_action() cause the game has finished,"
+                " the passenger is succeffully dropped off."
+            )
         best_node = None
         self.current_node.children = []
         self.current_node.depth = 0
@@ -65,7 +90,6 @@ class MonteCarloPolicy(Policy):
         self.current_node.parent = None
         self.current_node.reward = 0.0
         self.current_node.cumul_reward = 0.0
-        
         # Call the training function
         if self.current_stage is Stage.PICK:
             self.pick_tree = self.generate_tree(
@@ -74,11 +98,20 @@ class MonteCarloPolicy(Policy):
             )
             self.train_pickup()
             if self.pick_tree.winning_node is not None:
-                LOGGER.info(f"Found PICK stage winning node: {self.pick_tree.winning_node}")
+                LOGGER.info(
+                    "Found PICK stage winning node:"
+                    f" {self.pick_tree.winning_node}"
+                )
                 best_node = self.pick_tree.winning_node
             else:
-                max_cumul_reward = max(node.cumul_reward for node in self.pick_tree.deepest_layer_nodes)
-                best_nodes = [node for node in self.pick_tree.deepest_layer_nodes if node.cumul_reward == max_cumul_reward]
+                max_cumul_reward = max(
+                    node.cumul_reward for node in
+                    self.pick_tree.deepest_layer_nodes
+                )
+                best_nodes = [
+                    node for node in self.pick_tree.deepest_layer_nodes
+                    if node.cumul_reward == max_cumul_reward
+                ]
                 best_node = random.choice(best_nodes)
                 # LOGGER.info(f"RANDOM best_node CHOSEN: {best_node}")
         elif self.current_stage is Stage.DROP:
@@ -90,24 +123,38 @@ class MonteCarloPolicy(Policy):
             if self.drop_tree.winning_node is not None:
                 best_node = self.drop_tree.winning_node
             else:
-                max_cumul_reward = max(node.cumul_reward for node in self.drop_tree.deepest_layer_nodes)
-                best_nodes = [node for node in self.drop_tree.deepest_layer_nodes if node.cumul_reward == max_cumul_reward]
+                max_cumul_reward = max(
+                    node.cumul_reward for node
+                    in self.drop_tree.deepest_layer_nodes
+                )
+                best_nodes = [
+                    node for node in self.drop_tree.deepest_layer_nodes
+                    if node.cumul_reward == max_cumul_reward
+                ]
                 best_node = random.choice(best_nodes)
-        
         self.current_node = best_node.first_layer_parent
         self.game_env.back_to(self.current_node.state)
-        self.game_env.render()
-        
+        if render:
+            self.game_env.render()
         # Override the actual stage after training
-        if (self.current_node.reward != 10.0 
-            and self.game_env.passenger_pickedup(self.current_node.state) is False): 
+        if (
+            self.game_env.passenger_pickedup(self.current_node.state) is False
+            and self.current_node.taxi_on_passenger is False
+        ):
             self.current_stage = Stage.PICK
         else:
             self.current_stage = Stage.DROP
+
+        if self.game_env.passenger_droppedoff(self.current_node.state):
+            game_status = GameStatus.TERMINATED
+        else:
+            game_status = GameStatus.RUNNING
+
         return ActionWithReward(
             action=best_node.first_layer_parent.action,
             probability=1.0,
-            reward=best_node.first_layer_parent.reward
+            reward=best_node.first_layer_parent.reward,
+            game_status=game_status
         )
 
     def generate_tree(
@@ -124,7 +171,7 @@ class MonteCarloPolicy(Policy):
             The generated Node for the root of the Monte Carlo Tree.
         depth: int
             The depth of the tree generation.
-        
+
         Returns
         -------
         tree: MonteCarloTree
@@ -135,7 +182,6 @@ class MonteCarloPolicy(Policy):
             actions = [a for a in Action if a is not Action.DROP_OFF]
         elif self.current_stage is Stage.DROP:
             actions = [a for a in Action if a is not Action.PICK_UP]
-        
         tree = MonteCarloTree(
             root_node=root_node,
             actions=actions,
@@ -143,7 +189,6 @@ class MonteCarloPolicy(Policy):
         )
 
         return tree
-        
 
     def train_pickup(self) -> None:
         # Initialize BFS list with root children
@@ -151,17 +196,21 @@ class MonteCarloPolicy(Policy):
 
         # Itérer le tableau et exécuter l'action associée à chaque noeud
         for node in self.pick_tree.bfs:
-            
             # Take back env to parent Node state
             self.game_env.back_to(node.parent.state)
 
             # Exec Node action
-            state, reward, _, _, info = self.game_env.env.step(node.action.value)
+            state, reward, _, _, info = self.game_env.env.step(
+                node.action.value
+            )
 
             # Process possible Cutoffs
-            illegal_action: bool = bool(node.parent.env_info.action_mask[node.action.value] == 0) # Moved wall & wrong pick/drop
-            moved_back: bool = bool(state in self.pick_tree.state_history) # Passed on visited state
-
+            # Moved wall & wrong pick/drop
+            illegal_action = bool(
+                node.parent.env_info.action_mask[node.action.value] == 0
+            )
+            # Passed on visited state
+            moved_back = bool(state in self.pick_tree.state_history)
             # Update du Tree et du Node
             self.pick_tree.visited_node += 1
             self.pick_tree.state_history.add(state)
@@ -172,7 +221,7 @@ class MonteCarloPolicy(Policy):
 
             # Stop if passenger picked up
             if self.game_env.passenger_pickedup(state):
-                node.update_reward(float(10))
+                node.taxi_on_passenger = True
                 LOGGER.info(f"Found PICK stage winning node : {node}")
                 self.pick_tree.winning_node = node
                 self.current_stage = Stage.DROP
@@ -212,11 +261,17 @@ class MonteCarloPolicy(Policy):
             self.game_env.back_to(node.parent.state)
 
             # Exec Node action
-            state, reward, _, _, info = self.game_env.env.step(node.action.value)
+            state, reward, _, _, info = self.game_env.env.step(
+                node.action.value
+            )
 
             # Process possible Cutoffs
-            illegal_action: bool = bool(node.parent.env_info.action_mask[node.action.value] == 0) # Moved wall & wrong pick/drop
-            moved_back: bool = bool(state in self.drop_tree.state_history) # Passed on visited state
+            # Moved wall & wrong pick/drop
+            illegal_action = bool(
+                node.parent.env_info.action_mask[node.action.value] == 0
+            )
+            # Passed on visited state
+            moved_back = bool(state in self.drop_tree.state_history)
 
             # Update du Tree et du Node
             self.drop_tree.visited_node += 1
@@ -231,7 +286,7 @@ class MonteCarloPolicy(Policy):
                 LOGGER.info(f"Found DROP stage winning node : {node}")
                 self.drop_tree.winning_node = node
                 return
-            
+
             # Cutoff if bad action chosen
             if illegal_action is False and moved_back is False:
                 self.drop_tree.bfs.extend(node.children)
@@ -239,7 +294,7 @@ class MonteCarloPolicy(Policy):
             # Add Nodes of searching depth to list if no winning Node found
             if node.depth is self.depth:
                 self.drop_tree.deepest_layer_nodes.append(node)
-            
+
     def train(self) -> None:
         """
         Full train with the MonteCarloPolicy.

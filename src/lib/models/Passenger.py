@@ -46,6 +46,8 @@ class Passenger(Enum):
                 return (0, 0)
             elif passenger_location == Passenger.YELLOW:
                 return (4, 0)
+            elif passenger_location == Passenger.TAXI:
+                return (-1, -1)
             else:
                 return None
         return passenger_location

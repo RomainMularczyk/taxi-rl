@@ -2,11 +2,13 @@ from typing import Union
 from lib.policies.LegalSamplePolicy import LegalSamplePolicy
 from lib.policies.RandomSamplePolicy import RandomSamplePolicy
 from lib.policies.MonteCarloPolicy import MonteCarloPolicy
-from lib.policies.MaxPolicy import MaxPolicy
+from lib.policies.GreedyPolicy import GreedyPolicy
+from lib.policies.EpsilonGreedyPolicy import EpsilonGreedyPolicy
 
 
 Policies = Union[
-    MaxPolicy,
+    EpsilonGreedyPolicy,
+    GreedyPolicy,
     LegalSamplePolicy,
     RandomSamplePolicy,
     MonteCarloPolicy

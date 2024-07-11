@@ -12,7 +12,7 @@ def test_q_table_size():
         action_space=env.action_space.n  # type: ignore
     )
     expected = 500
-    result = len(q_table._values)
+    result = len(q_table.values)
     assert result == expected
 
 

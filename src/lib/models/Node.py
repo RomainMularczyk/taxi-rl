@@ -14,7 +14,8 @@ class Node:
     action: Action
         The action associated with this Node.
     path: str
-        The path name of this Node. Number is the layer level and letter is the action.
+        The path name of this Node. Number is the layer level and
+        letter is the action.
     state: int
         The state of this Node depending on the GameEnvironment.
     parent: Node
@@ -22,18 +23,20 @@ class Node:
     children: List[Node]
         The children of the Node.
     """
+
     def __init__(
-        self, 
+        self,
         depth: int,
-        action: Action | None = None, 
-        parent: Node | None = None, 
-        state: int | None = None, 
-        env_info: EnvironmentInfo | None = None, 
+        action: Action | None = None,
+        parent: Node | None = None,
+        state: int | None = None,
+        env_info: EnvironmentInfo | None = None,
         children: List[Node] | List = [],
         path: str | None = '',
         reward: float | None = .0,
-        cumul_reward: float | None = .0
-    ):
+        cumul_reward: float | None = .0,
+        taxi_on_passenger: bool = False
+    ) -> None:
         self.action = action
         self.path = path
         self.depth = depth
@@ -43,8 +46,8 @@ class Node:
         self.env_info = env_info
         self.reward = reward
         self.cumul_reward = cumul_reward
+        self.taxi_on_passenger = taxi_on_passenger
 
-    
     def update_reward(self, reward: float) -> None:
         """
         Update the reward and cumulative reward from the Node.
@@ -59,19 +62,22 @@ class Node:
 
     def update_children_with(self, env_info: EnvironmentInfo) -> None:
         """
-        Delete the Node's children that are illegal action according to the action_mask.
+        Delete the Node's children that are illegal action according to the
+        action_mask.
 
         Attributes
         ----------
         action_mask: list[int]
-            The action mask of the state associated to this Node and its action.
+            The action mask of the state associated to this Node and its
+            action.
         """
         allowed_actions: Tuple[Action] = Action.legal_actions(env_info)
-        allowed_children = [child for child in self.children if child.action in allowed_actions]
+        allowed_children = [
+            child for child in self.children if child.action in allowed_actions
+        ]
         self.children = allowed_children
 
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         try:
             return textwrap.dedent(f"""
                 [Node] {self.fullpath}
@@ -85,7 +91,7 @@ class Node:
                 [Node] RootNode
                 [Children] {[c.path for c in self.children]}
             """)
-            
+
     def display(self):
         print(self)
 
@@ -97,21 +103,21 @@ class Node:
         Returns
         -------
         fullpath
-            The full path of the Node, meaning the path of 
-            each its ancesters that leads to him.
+            The full path of the Node, meaning the path of each its
+            ancesters that leads to him.
         """
         if self.parent is None:
             return self.path
         return f"{self.parent.fullpath}{self.path}"
-    
+
     @property
-    def actions(self) -> list[Action]:
+    def actions(self) -> List[Action]:
         """
         Generate a list of Action to take in order to be in this node state.
-        
+
         Returns
         -------
-        list[Action]
+        List[Action]
             A list of Action to take in order to be in this node state.
         """
         actions = []
@@ -130,7 +136,7 @@ class Node:
         node: Node
             The parent Node of self that is at layer 1.
         """
-        if self.depth <= 1 :
+        if self.depth <= 1:
             return self
-        else: 
+        else:
             return self.parent.first_layer_parent

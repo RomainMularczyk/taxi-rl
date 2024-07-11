@@ -16,6 +16,6 @@ def get_logger():
         # filemode=LOG_FILE_MODE
     )
     logger = logging.getLogger()
-    logger.setLevel(LOG_LEVEL or logging.INFO)
+    logger.setLevel(LOG_LEVEL or logging.ERROR)
     logger.info(f"Logger initialized with level {logging.getLevelName(logger.level)}.")
     return logger

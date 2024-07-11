@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from numpy import array, ndarray
 from lib.errors.NotLegalActionException import NotLegalActionException
 from lib.models.EnvironmentInfo import EnvironmentInfo
+from lib.models.GameStatus import GameStatus
 
 
 class Action(Enum):
@@ -151,6 +152,7 @@ class ActionWithReward(BaseModel):
     action: Action
     probability: float | None = None
     reward: float
+    game_status: GameStatus
 
     @staticmethod
     def flatten(list_action_reward: List[ActionWithReward]) -> ndarray:

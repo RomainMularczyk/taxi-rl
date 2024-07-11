@@ -7,7 +7,7 @@ from lib.formulas.q_learning import QLearning
 
 def test_rewards_random_sample_policy():
     env = gym.make("Taxi-v3")
-    policy = RandomSamplePolicy(env=env, seed=42)  # type: ignore
+    policy = RandomSamplePolicy(game_env=env, seed=42)  # type: ignore
     q_learning = QLearning(
         cutoff_score=0,
         observation_space=env.observation_space.n,  # type: ignore
@@ -52,7 +52,7 @@ def test_rewards_random_sample_policy():
 
 def test_rewards_legal_sample_policy():
     env = gym.make("Taxi-v3")
-    policy = LegalSamplePolicy(env=env, seed=42)  # type: ignore
+    policy = LegalSamplePolicy(game_env=env, seed=42)  # type: ignore
     q_learning = QLearning(
         cutoff_score=0,
         observation_space=env.observation_space.n,  # type: ignore
